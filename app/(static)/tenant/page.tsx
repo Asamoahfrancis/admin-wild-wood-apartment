@@ -1,81 +1,54 @@
 "use client";
+
 import React, { useEffect, useState } from "react";
-import { Input } from "antd";
+import { Input, Spin } from "antd";
 import { CiSearch } from "react-icons/ci";
 
 import {
   Table,
   TableBody,
   TableCell,
-  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { AddTenantDialog } from "@/components/TenantModal/AddTenantDialog";
+import { AddRoleDialog } from "@/components/TenantModal/AddRoleDialog";
+import axiosInstance from "@/api/axios/axios-not-auth";
+import { LoadingOutlined } from "@ant-design/icons";
 
-const invoices = [
-  {
-    invoice: "INV001",
-    paymentStatus: "Paid",
-    totalAmount: "$250.00",
-    paymentMethod: "Credit Card",
-  },
-  {
-    invoice: "INV002",
-    paymentStatus: "Pending",
-    totalAmount: "$150.00",
-    paymentMethod: "PayPal",
-  },
-  {
-    invoice: "INV003",
-    paymentStatus: "Unpaid",
-    totalAmount: "$350.00",
-    paymentMethod: "Bank Transfer",
-  },
-  {
-    invoice: "INV004",
-    paymentStatus: "Paid",
-    totalAmount: "$450.00",
-    paymentMethod: "Credit Card",
-  },
-  {
-    invoice: "INV005",
-    paymentStatus: "Paid",
-    totalAmount: "$550.00",
-    paymentMethod: "PayPal",
-  },
-  {
-    invoice: "INV006",
-    paymentStatus: "Pending",
-    totalAmount: "$200.00",
-    paymentMethod: "Bank Transfer",
-  },
-  {
-    invoice: "INV007",
-    paymentStatus: "Unpaid",
-    totalAmount: "$300.00",
-    paymentMethod: "Credit Card",
-  },
-];
+interface Tenanttype {
+  _id: string;
+  TenantFirstName: string;
+  TenantMiddleName: string;
+  TenantLastName: string;
+  TenantEmail: string;
+  TenantPhone: string;
+  LeasePeriodKey: { LeasePeriodInterval: string };
+  createdAt: string;
+}
 
 const Tenant = () => {
-  const [openSMS, setOpenSMS] = useState<boolean>(false);
-  const [refresh, setRefresh] = useState<boolean>(false);
-  const [isLoading, setLoading] = useState<boolean>(false);
-  const [selectedRows, setSelectedRows] = useState<number[]>([]);
-  const [selectAll, setSelectAll] = useState(false);
-  const [EditOpen, setEditOpen] = useState<boolean>(false);
-  const [role, setRole] = useState<any>();
-  const [mounted, setMounted] = useState(false);
-
+  const [getAllTenants, setAllTenants] = useState<Tenanttype[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   useEffect(() => {
-    setMounted(true);
+    async function GetAllTenant() {
+      try {
+        setIsLoading(true);
+        const res = await axiosInstance.get("/tenants");
+        const response = res.data;
+        setAllTenants(response.payload);
+      } catch (error) {
+        console.error("Error fetching roles:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    GetAllTenant();
   }, []);
 
-  if (!mounted) {
-    return null;
-  }
+  const antIcon = (
+    <LoadingOutlined style={{ fontSize: 64, color: "#EF1C23" }} spin />
+  );
 
   return (
     <div>
@@ -83,10 +56,10 @@ const Tenant = () => {
         <div className="p-5">
           <div className="flex items-center px-4 py-[26px] gap-4">
             <p className="text-[32px] font-[700] text-text_color">
-              Tenent Managers
+              Manage Roles
             </p>
             <div className="ml-auto">
-              <AddTenantDialog />
+              <AddRoleDialog />
             </div>
           </div>
           <div className="bg-white p-4 rounded-[20px] drop-shadow-[0_3px_6px_rgba(121,121,121,0.1)]">
@@ -100,36 +73,45 @@ const Tenant = () => {
                 />
               </div>
             </section>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[100px]">Invoice</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Method</TableHead>
-                  <TableHead className="text-right">Amount</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {invoices.map((invoice) => (
-                  <TableRow key={invoice.invoice}>
-                    <TableCell className="font-medium">
-                      {invoice.invoice}
-                    </TableCell>
-                    <TableCell>{invoice.paymentStatus}</TableCell>
-                    <TableCell>{invoice.paymentMethod}</TableCell>
-                    <TableCell className="text-right">
-                      {invoice.totalAmount}
-                    </TableCell>
+            {isLoading ? (
+              <div className="flex justify-center items-center h-64">
+                <Spin indicator={antIcon} />
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[100px]">ID</TableHead>
+                    <TableHead>First </TableHead>
+                    <TableHead>Middle </TableHead>
+                    <TableHead>Last </TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Phone</TableHead>
+                    <TableHead>LeasePeriod</TableHead>
+                    <TableHead>CreatedAt</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-              <TableFooter>
-                <TableRow>
-                  <TableCell colSpan={3}>Total</TableCell>
-                  <TableCell className="text-right">$2,500.00</TableCell>
-                </TableRow>
-              </TableFooter>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {getAllTenants.map((tenant) => (
+                    <TableRow key={tenant._id}>
+                      <TableCell className="font-medium">
+                        {tenant._id.slice(0, 5)}
+                      </TableCell>
+                      <TableCell>{tenant.TenantFirstName}</TableCell>
+                      <TableCell>{tenant.TenantMiddleName}</TableCell>
+                      <TableCell>{tenant.TenantLastName}</TableCell>
+                      <TableCell>{tenant.TenantEmail}</TableCell>
+                      <TableCell>{tenant.TenantPhone}</TableCell>
+                      <TableCell>
+                        {tenant.LeasePeriodKey?.LeasePeriodInterval}
+                      </TableCell>
+                      <TableCell>{tenant.TenantFirstName}</TableCell>
+                      <TableCell>{tenant.createdAt}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
           </div>
         </div>
       </main>
