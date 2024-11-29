@@ -1,7 +1,7 @@
 "use client";
 import { useFormik } from "formik";
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { basicSchema } from "./schema";
 import { Spin } from "antd";
 import { LoadingOutlined } from "@ant-design/icons";
@@ -13,7 +13,7 @@ import { COOKIE_NAMES } from "../api/constant";
 import { toast } from "@/hooks/use-toast";
 import { ToastAction } from "@/components/ui/toast";
 import { AxiosError } from "axios";
-
+import { io } from "socket.io-client";
 interface SignInValues {
   email: string;
   password: string;
@@ -76,6 +76,28 @@ export default function Home() {
     validationSchema: basicSchema,
     onSubmit,
   });
+
+  const SOCKET_SERVER_URL =
+    process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+  const socket = io(SOCKET_SERVER_URL);
+
+  useEffect(() => {
+    socket.on("connect", () => {
+      console.log("Connected to the server:", socket.id);
+
+      socket.emit("chat message", "Hello, server!");
+
+      socket.on("chat message", (msg) => {
+        console.log("Message from server:", msg);
+      });
+    });
+
+    return () => {
+      socket.off("chat message");
+      socket.disconnect();
+    };
+  }, [socket]);
+
   return (
     <main>
       <div className="h-[100vh] ">
